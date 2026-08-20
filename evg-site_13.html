@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECO-VibraGuard</title>
+<meta name="description" content="가동 중인 변압기 외벽에 붙여, 고장의 전조를 미리 읽습니다.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23262E30'/%3E%3Crect x='14' y='44' width='52' height='13' fill='%235AAB46'/%3E%3Crect x='34' y='20' width='13' height='60' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --ink:#262E30; --ink-2:#57635F; --ink-3:#8D9A96;
+  --green:#5AAB46; --green-d:#4A9138; --green-l:#7BC468;
+  --red:#D9563F;
+  --paper:#F4F7F4; --line:#E4EAE5; --max:1200px;
+  --sh:0 1px 2px rgba(38,46,48,.04), 0 16px 40px -28px rgba(38,46,48,.45);
+  --sh-h:0 2px 5px rgba(38,46,48,.05), 0 30px 56px -30px rgba(38,46,48,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  color:var(--ink);background:#fff;line-height:1.65;letter-spacing:-0.015em;font-size:17px;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 34px;width:100%;position:relative;z-index:2}
+
+/* header */
+header{position:fixed;top:0;left:0;right:0;z-index:200;height:80px;
+  background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(18px);
+  border-bottom:1px solid transparent;transition:border-color .3s,box-shadow .3s}
+header.solid{border-bottom-color:var(--line);box-shadow:0 12px 34px -30px rgba(38,46,48,.7)}
+.hin{display:flex;align-items:center;height:80px}
+.logo svg{height:27px;width:auto}
+nav{display:flex;gap:34px;margin-left:auto;font-size:15.5px;font-weight:500;color:var(--ink-2)}
+nav a{position:relative;padding:6px 0;transition:color .2s}
+nav a:hover,nav a.act{color:var(--ink)}
+nav a.act{font-weight:700}
+nav a::after{content:'';position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--green);transition:width .3s cubic-bezier(.2,.7,.3,1)}
+nav a.act::after,nav a:hover::after{width:100%}
+.lang{display:flex;margin-left:38px;font-size:13px;font-weight:600;color:var(--ink-3);gap:9px;align-items:center}
+.lang button{background:none;border:0;font:inherit;cursor:pointer;color:var(--ink-3);transition:color .2s}
+.lang button.on{color:var(--ink)}
+.lang i{width:1px;height:12px;background:var(--line)}
+.burger{display:none;background:none;border:0;cursor:pointer;padding:10px;margin-left:8px}
+.burger span{display:block;width:24px;height:2px;background:var(--ink);margin:5px 0;transition:.3s;border-radius:2px}
+.burger.x span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.x span:nth-child(2){opacity:0}
+.burger.x span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+main{padding-top:80px}
+
+/* depth */
+.sec{position:relative;padding:92px 0;overflow:hidden;isolation:isolate}
+.sec::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(38,46,48,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(38,46,48,.05) 1px,transparent 1px);
+  background-size:80px 80px;
+  -webkit-mask-image:radial-gradient(130% 85% at 50% 0%,#000 12%,transparent 72%);
+  mask-image:radial-gradient(130% 85% at 50% 0%,#000 12%,transparent 72%)}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.paper{background:radial-gradient(90% 70% at 8% 0%,#fff 0%,transparent 55%),linear-gradient(180deg,#FAFCFA 0%,var(--paper) 45%,#EFF4EF 100%)}
+
+/* type */
+h1{font-size:clamp(42px,7vw,86px);line-height:1.05;letter-spacing:-0.05em;font-weight:800}
+h1 em{font-style:normal;color:var(--green)}
+h2{font-size:clamp(29px,4.2vw,48px);line-height:1.14;letter-spacing:-0.045em;font-weight:800}
+h3{font-size:clamp(21px,2.3vw,25px);line-height:1.3;letter-spacing:-0.035em;font-weight:700}
+.mark{display:flex;align-items:center;gap:11px;font-size:12px;font-weight:700;letter-spacing:.2em;color:var(--green);margin-bottom:20px}
+.mark::before{content:'';width:24px;height:2px;background:var(--green)}
+.lead{font-size:clamp(16.5px,1.65vw,19.5px);color:var(--ink-2);line-height:1.78;max-width:31em}
+.sm{font-size:15.5px;color:var(--ink-2);line-height:1.72}
+
+.acts{display:flex;flex-wrap:wrap;gap:13px;margin-top:44px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:17px 32px;border-radius:3px;font-size:16px;font-weight:600;transition:.25s}
+.btn-p{background:var(--ink);color:#fff;box-shadow:0 16px 32px -18px rgba(38,46,48,.9)}
+.btn-p:hover{background:var(--green);box-shadow:0 18px 36px -16px rgba(90,171,70,.75)}
+.btn-s{border:1px solid var(--line);background:rgba(255,255,255,.7)}
+.btn-s:hover{border-color:var(--ink)}
+.btn .ar{transition:transform .25s}
+.btn:hover .ar{transform:translateX(5px)}
+
+/* hero */
+.hero{position:relative;padding:88px 0 96px;overflow:hidden;isolation:isolate}
+.hero::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(38,46,48,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(38,46,48,.05) 1px,transparent 1px);
+  background-size:80px 80px;
+  -webkit-mask-image:radial-gradient(100% 80% at 70% 20%,#000 0%,transparent 70%);
+  mask-image:radial-gradient(100% 80% at 70% 20%,#000 0%,transparent 70%)}
+.hero .wrap{display:grid;grid-template-columns:1.04fr .96fr;gap:58px;align-items:center}
+.scope{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.93);overflow:hidden;
+  box-shadow:0 2px 5px rgba(38,46,48,.04), 0 44px 84px -48px rgba(38,46,48,.6)}
+.scope-top{display:flex;align-items:center;gap:9px;padding:14px 20px;border-bottom:1px solid var(--line);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--ink-3)}
+.dotlive{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(90,171,70,.18);animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.chrow{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--line)}
+.chrow:last-child{border-bottom:0}
+.chrow .cl{font-size:12.5px;font-weight:700;color:var(--ink-3);width:58px;flex-shrink:0}
+.chrow svg{flex:1;height:34px;min-width:0;width:100%}
+.chrow .st{font-size:11.5px;font-weight:800;color:var(--green);flex-shrink:0;letter-spacing:.06em}
+.scope-foot{display:flex;justify-content:space-between;padding:15px 20px;background:linear-gradient(180deg,#FAFCFA,#F1F6F1);font-size:12.5px;color:var(--ink-3);font-weight:700}
+.scope-foot b{color:var(--green)}
+
+/* cause -> signal cards */
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:46px}
+.mgrid>*{min-width:0}
+.mcard{background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  box-shadow:var(--sh);transition:.28s;display:flex;flex-direction:column}
+.mcard:hover{transform:translateY(-4px);box-shadow:var(--sh-h);border-color:#CFE6C6}
+.mbody{padding:26px 26px 24px;flex:1;display:flex;flex-direction:column}
+.mhead{display:flex;align-items:center;gap:13px;margin-bottom:20px}
+.cico{width:42px;height:42px;border-radius:12px;background:var(--paper);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0}
+.cico svg{width:22px;height:22px}
+.mnum{font-size:11.5px;font-weight:800;letter-spacing:.18em;color:var(--green)}
+.mrule{flex:1;height:1px;background:var(--line)}
+.mcard h3{font-size:20px;margin-bottom:10px;letter-spacing:-0.035em}
+.mcard p{font-size:15.5px;color:var(--ink-2);line-height:1.7;flex:1}
+.msig{display:flex;align-items:center;gap:12px;padding:15px 26px;
+  background:linear-gradient(90deg,#F2F9EF,#E9F4E4);border-top:1px solid #DCEBD5}
+.msig .si{width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 7px 14px -7px rgba(90,171,70,.95)}
+.msig .si svg{width:16px;height:16px}
+.msig b{font-size:16.5px;font-weight:800;letter-spacing:-0.03em;color:var(--ink)}
+.msig .lb{margin-left:auto;font-size:10.5px;font-weight:800;letter-spacing:.14em;color:var(--green-d);opacity:.8}
+.subhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 20px;margin-top:70px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.shl{font-size:12px;font-weight:800;letter-spacing:.18em;color:var(--green)}
+.shd{font-size:16.5px;color:var(--ink-2)}
+.limits{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.lim{background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:14px;padding:26px 28px;box-shadow:var(--sh);transition:.28s;display:flex;gap:20px;align-items:flex-start}
+.lim:hover{transform:translateY(-4px);box-shadow:var(--sh-h)}
+.lim .ic{width:30px;height:30px;color:var(--ink-3);flex-shrink:0;margin-top:3px}
+.lim h3{font-size:19.5px;margin-bottom:8px}
+.lim p{font-size:15.5px;color:var(--ink-2);line-height:1.7}
+
+
+/* dashboard */
+.dash{margin-top:80px}
+.dash .dtx{max-width:34em;margin-bottom:30px}
+.dash h3{margin-bottom:14px}
+.dash p{font-size:16.5px;color:var(--ink-2);line-height:1.75}
+.dbw{border-radius:14px;overflow:hidden;border:1px solid #1C2622;background:#0B100E;color:#C7D3CE;
+  box-shadow:0 60px 100px -60px rgba(0,0,0,.85), 0 2px 6px rgba(0,0,0,.2);
+  font-family:ui-monospace,SFMono-Regular,'JetBrains Mono',Menlo,Consolas,monospace;letter-spacing:0}
+.dbgrid{display:grid;grid-template-columns:170px 1fr}
+.dbside{border-right:1px solid #1C2622;padding:13px 10px;display:flex;flex-direction:column}
+.dblogo{display:flex;gap:10px;align-items:flex-start;padding:4px 6px 16px;border-bottom:1px solid #1C2622}
+.dblogo .lm{width:23px;height:23px;border-radius:8px;background:#16241D;border:1px solid #24382E;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dblogo .lm svg{width:14px;height:14px;color:#4CD98A}
+.dblogo b{display:block;font-size:11.5px;color:#EAF2EE;font-weight:700;font-family:'Pretendard',sans-serif;letter-spacing:-0.02em}
+.dblogo span{display:block;font-size:8.5px;color:#5C6C66;letter-spacing:.16em;margin-top:4px;line-height:1.5}
+.dbnl{font-size:8px;color:#4E5D58;letter-spacing:.2em;padding:14px 8px 5px}
+.dbnav{display:flex;flex-direction:column;gap:2px}
+.dbnav a{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;font-size:11px;color:#8A9A94}
+.dbnav a.on{background:#14201B;color:#EAF2EE;border:1px solid #22332B;position:relative}
+.dbnav a.on::after{content:'';position:absolute;right:11px;width:5px;height:5px;border-radius:50%;background:#4CD98A}
+.dbnav svg{width:12px;height:12px;flex-shrink:0}
+.dbnav .cnt{margin-left:auto;font-size:9.5px;background:#2A1614;color:#F1584E;border:1px solid #3A1E1C;border-radius:5px;padding:1px 6px}
+.dbuser{margin-top:auto;display:flex;gap:9px;align-items:center;border:1px solid #1C2622;border-radius:10px;padding:9px 10px;background:#0E1512}
+.dbuser .ua{width:22px;height:22px;border-radius:7px;background:#16241D;color:#4CD98A;font-size:9.5px;display:flex;align-items:center;justify-content:center;border:1px solid #24382E;flex-shrink:0}
+.dbuser b{font-size:10.5px;color:#EAF2EE;display:block;font-weight:600}
+.dbuser span{font-size:8.5px;color:#5C6C66;letter-spacing:.14em}
+.dbtop{display:flex;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid #1C2622}
+.zsel{display:flex;align-items:center;gap:7px;background:#14201B;border:1px solid #22332B;border-radius:8px;padding:6px 11px;font-size:10.5px;color:#EAF2EE}
+.zsel .dot{width:6px;height:6px;border-radius:50%;background:#4CD98A}
+.dsearch{display:flex;align-items:center;gap:7px;border:1px solid #1C2622;border-radius:8px;padding:6px 11px;font-size:10.5px;color:#5C6C66;width:180px;white-space:nowrap;overflow:hidden}
+.dsearch svg{width:12px;height:12px}
+.dclock{margin-left:auto;display:flex;align-items:center;gap:8px;border:1px solid #1C2622;border-radius:8px;padding:6px 11px;font-size:11px;color:#EAF2EE}
+.dclock i{font-style:normal;color:#5C6C66;font-size:10px;letter-spacing:.1em}
+.dnet{display:flex;align-items:center;gap:7px;border:1px solid #1C2622;border-radius:8px;padding:6px 11px;font-size:10.5px;color:#4CD98A}
+.dnet .dot{width:6px;height:6px;border-radius:50%;background:#4CD98A}
+.dbbody{padding:16px 14px}
+.dbtitle{display:flex;align-items:flex-start;gap:16px}
+.dbtitle h4{font-family:'Pretendard',sans-serif;font-size:21px;font-weight:800;color:#F2F7F4;letter-spacing:-0.035em;line-height:1.1}
+.dbtitle .sub{margin-top:6px;font-size:10px;color:#5C6C66;letter-spacing:.02em}
+.dbtitle .sub b{color:#8A9A94;font-weight:400}
+.dbref{margin-left:auto;border:1px solid #22332B;background:#14201B;border-radius:7px;padding:7px 11px;font-size:9.5px;color:#8A9A94;letter-spacing:.12em;white-space:nowrap;flex-shrink:0}
+.dbkpi{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:15px}
+.kpi{border:1px solid #1C2622;border-radius:10px;background:#0E1512;padding:12px}
+.kpi .kh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.kpi .kl{font-size:8.5px;color:#5C6C66;letter-spacing:.13em;line-height:1.6}
+.kpi .spark{width:52px;height:17px;flex-shrink:0}
+.kpi b{display:block;margin-top:9px;font-size:25px;font-weight:700;letter-spacing:-0.025em;color:#F2F7F4;line-height:1}
+.kpi .kf{margin-top:8px;font-size:9.5px;color:#5C6C66;line-height:1.5}
+.kpi .kf .g{color:#4CD98A}.kpi .kf .r{color:#F1584E}.kpi .kf .y{color:#E9A23B}.kpi .kf .w{color:#8A9A94}
+.kpi.g b{color:#4CD98A}.kpi.r b{color:#F1584E}
+.dbcols{display:grid;grid-template-columns:1.32fr 1fr;gap:9px;margin-top:9px}
+.pan{border:1px solid #1C2622;border-radius:10px;background:#0E1512;overflow:hidden;display:flex;flex-direction:column}
+.panh{display:flex;align-items:flex-start;gap:10px;padding:12px 13px 10px}
+.panh .pl{font-size:8.5px;color:#5C6C66;letter-spacing:.15em}
+.panh h5{font-family:'Pretendard',sans-serif;font-size:15px;font-weight:800;color:#F2F7F4;margin-top:5px;letter-spacing:-0.025em}
+.panh .pr{margin-left:auto;font-size:9.5px;color:#5C6C66;white-space:nowrap;padding-top:2px}
+.panh .pr b{color:#F1584E;font-weight:400}
+.badge{margin-left:auto;font-size:9px;color:#F1584E;background:#2A1614;border:1px solid #3A1E1C;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.mapbox{margin:0 10px 9px;border:1px solid #1C2622;border-radius:9px;background:#0A0F0D;position:relative;overflow:hidden;flex:1;min-height:196px}
+.mapbox svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.maplab{position:absolute;left:11px;top:9px;font-size:8px;color:#4E5D58;letter-spacing:.17em}
+.maplegend{display:flex;flex-wrap:wrap;gap:5px 13px;padding:0 13px 12px;font-size:9.5px;color:#8A9A94;margin-top:auto}
+.maplegend i{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}
+.alert{display:flex;gap:10px;padding:11px 13px;border-top:1px solid #1C2622;position:relative}
+.alert::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:#F1584E}
+.alert.w::before{background:#E9A23B}
+.alert .rk{font-size:9.5px;color:#4E5D58;padding-top:3px;width:8px;flex-shrink:0}
+.alert .fl{color:#F1584E;padding-top:2px;flex-shrink:0}
+.alert.w .fl{color:#E9A23B}
+.alert .fl svg{width:11px;height:11px}
+.alert .body{flex:1;min-width:0}
+.alert .tx{font-size:9.5px;color:#4CD98A;letter-spacing:.07em}
+.alert .cr{font-size:8px;color:#F1584E;background:#2A1614;border:1px solid #3A1E1C;border-radius:4px;padding:2px 7px;margin-left:8px;letter-spacing:.06em}
+.alert.w .cr{color:#E9A23B;background:#2A2213;border-color:#3A3020}
+.alert .ttl{font-family:'Pretendard',sans-serif;font-size:13.5px;font-weight:700;color:#F2F7F4;margin-top:5px;letter-spacing:-0.025em}
+.alert .loc{font-size:9.5px;color:#5C6C66;margin-top:4px}
+.alert .risk{text-align:right;flex-shrink:0}
+.alert .risk b{display:block;font-size:19px;color:#F1584E;font-weight:700;line-height:1}
+.alert.w .risk b{color:#E9A23B}
+.alert .risk span{font-size:7.5px;color:#4E5D58;letter-spacing:.13em}
+.panf{display:flex;justify-content:space-between;gap:10px;padding:10px 13px;border-top:1px solid #1C2622;font-size:8.5px;color:#4E5D58;letter-spacing:.11em;margin-top:auto}
+.dbscroll{overflow-x:auto;overflow-y:hidden;border-radius:14px;-webkit-overflow-scrolling:touch;width:1060px;max-width:100%;zoom:.84;margin:0 auto}
+.dbnote{margin-top:16px;font-size:12.5px;color:var(--ink-3);text-align:center}
+.swipe{display:none}
+
+/* tech */
+.chan{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:46px}
+.card{border:1px solid var(--line);border-radius:14px;padding:26px 28px;transition:.28s;background:rgba(255,255,255,.9);box-shadow:var(--sh)}
+.card:hover{border-color:#CFE6C6;transform:translateY(-4px);box-shadow:var(--sh-h)}
+.card .ch{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.card .bd{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--green-d);border:1px solid #D9EAD3;background:#F1F8EE;padding:6px 12px;border-radius:999px;white-space:nowrap}
+.card p{font-size:16px;color:var(--ink-2);margin-top:8px;line-height:1.7}
+.viz{height:72px;margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+.viz svg{width:100%;height:54px}
+
+/* pipeline (merged how-it-works) */
+.pipe{margin-top:20px;border-radius:20px;padding:42px 40px;color:#fff;position:relative;overflow:hidden;
+  background:radial-gradient(70% 80% at 88% 8%,#36443F 0%,transparent 60%),linear-gradient(160deg,#2B3436,#212829);
+  box-shadow:0 40px 80px -50px rgba(38,46,48,.95)}
+.pipe::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(110% 90% at 80% 0%,#000 5%,transparent 70%);
+  mask-image:radial-gradient(110% 90% at 80% 0%,#000 5%,transparent 70%)}
+.pipe > *{position:relative;z-index:1}
+.pipe .ptitle{font-size:12px;font-weight:800;letter-spacing:.2em;color:var(--green-l);margin-bottom:12px}
+.pipe h3{font-size:clamp(23px,2.8vw,30px);color:#fff;margin-bottom:0}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);margin-top:34px}
+.fstep{position:relative;padding:0 42px 0 0}
+.fstep:not(:last-child)::after{content:'';position:absolute;top:30px;right:18px;width:13px;height:13px;
+  border-top:2px solid rgba(255,255,255,.26);border-right:2px solid rgba(255,255,255,.26);transform:rotate(45deg)}
+.fnum{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--green-l);margin-bottom:18px}
+.fic{width:46px;height:46px;color:var(--green-l);margin-bottom:18px;filter:drop-shadow(0 8px 18px rgba(123,196,104,.28))}
+.fstep h4{font-size:22px;font-weight:800;letter-spacing:-0.035em;color:#fff;margin-bottom:11px}
+.fstep p{font-size:15.5px;color:#A8B4B1;line-height:1.72;max-width:19em}
+.verdict{margin-top:34px;padding-top:26px;border-top:1px solid rgba(255,255,255,.12);
+  display:flex;flex-wrap:wrap;align-items:center;gap:18px 22px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.18);border-radius:999px;
+  padding:9px 17px;font-size:14.5px;font-weight:600;color:#D6DEDB}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--green-l)}
+.plus{color:#6D7A77;font-weight:700}
+.verdict .res{display:inline-flex;align-items:center;gap:11px;background:var(--green);color:#fff;
+  border-radius:999px;padding:11px 22px;font-size:15.5px;font-weight:700;box-shadow:0 14px 30px -14px rgba(90,171,70,.9)}
+.verdict .res svg{width:19px;height:19px}
+.verdict .cap{font-size:15px;color:#8E9C98;line-height:1.65;flex:1;min-width:260px}
+
+/* product */
+.explode{position:relative;margin-top:50px}
+.explode .art{width:46%;margin:0 auto;max-width:510px;filter:drop-shadow(0 34px 44px rgba(38,46,48,.11))}
+.co{position:absolute;width:25%;max-width:300px}
+.co .ci{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.co .ci .n{width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;font-size:12.5px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 7px 16px -6px rgba(90,171,70,.9)}
+.co .ci svg{width:23px;height:23px;color:var(--ink)}
+.co h3{font-size:24px;margin-bottom:10px}
+.co p{font-size:16.5px;color:var(--ink-2);line-height:1.62}
+.co::after{content:'';position:absolute;top:15px;height:1px;background:linear-gradient(90deg,var(--line),#C9D5CD)}
+.co.l{text-align:right;left:0}
+.co.l .ci{flex-direction:row-reverse}
+.co.l::after{right:-9%;width:8%}
+.co.r{right:0}
+.co.r::after{left:-9%;width:8%}
+.co.p1{top:0}.co.p2{top:54%}.co.p3{top:0}.co.p4{top:54%}
+
+.specs{display:grid;grid-template-columns:repeat(3,1fr);margin-top:56px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(150deg,#F2F9EF 0%,#E6F2E1 100%);border:1px solid #D6E9CE;
+  box-shadow:0 34px 70px -50px rgba(74,145,56,.75)}
+.spec{padding:34px 32px;border-right:1px solid rgba(74,145,56,.16)}
+.spec:last-child{border-right:0}
+.spec .si{width:38px;height:38px;color:var(--green-d);margin-bottom:18px}
+.spec b{display:block;font-size:clamp(34px,4.4vw,50px);font-weight:800;letter-spacing:-0.05em;color:var(--green-d);line-height:.95}
+.spec span{display:block;margin-top:13px;font-size:15.5px;color:#4B5A50;line-height:1.6;font-weight:500}
+
+/* timeline */
+.tl{margin-top:48px;overflow-x:auto;padding-bottom:10px}
+.tl-line{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,1fr);min-width:100%}
+.tl-i{position:relative;padding:0 28px 0 0}
+.tl-i::before{content:'';position:absolute;left:0;top:10px;right:0;height:2px;background:var(--line)}
+.tl-i:last-child::before{background:linear-gradient(90deg,var(--line),transparent)}
+.tl-i .d{position:relative;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center}
+.tl-i .d::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tl-i.done .d{border-color:var(--green)}
+.tl-i.done .d::after{background:var(--green)}
+.tl-i.now .d{border-color:var(--green);box-shadow:0 0 0 7px rgba(90,171,70,.14)}
+.tl-i.now .d::after{background:var(--green);animation:blink 1.8s infinite}
+.tl-i .dt{margin-top:22px;font-size:12.5px;font-weight:800;letter-spacing:.06em;color:var(--green)}
+.tl-i .tt{margin-top:8px;font-size:19px;font-weight:700;letter-spacing:-0.03em;line-height:1.35}
+.tl-i .dd{margin-top:9px;font-size:15px;color:var(--ink-3);line-height:1.65;padding-right:14px}
+
+/* contact */
+.people{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
+.per{background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:14px;padding:28px;transition:.28s;box-shadow:var(--sh)}
+.per:hover{transform:translateY(-4px);box-shadow:var(--sh-h);border-color:#CFE6C6}
+.per .av{width:48px;height:48px;border-radius:50%;background:linear-gradient(150deg,#F1F8EE,#E3F0DE);border:1px solid #D9EAD3;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--green-d);margin-bottom:18px;letter-spacing:-0.03em}
+.per .rl{font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--green);margin-bottom:9px}
+.per .nm{font-size:23px;font-weight:800;letter-spacing:-0.035em}
+.per .em{display:inline-flex;align-items:center;gap:9px;margin-top:18px;font-size:15.5px;color:var(--ink-2);
+  border-bottom:1px solid var(--line);padding-bottom:3px;transition:.25s;word-break:break-all}
+.per .em:hover{color:var(--green);border-color:var(--green)}
+.per .em svg{width:16px;height:16px;flex-shrink:0}
+.cmeta{margin-top:40px;padding-top:26px;border-top:1px solid var(--line);font-size:15px;color:var(--ink-3)}
+.cmeta b{color:var(--ink);font-weight:700;font-size:15.5px;margin-right:12px}
+
+footer{border-top:1px solid var(--line);padding:36px 0;background:#fff}
+.fin{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;font-size:14px;color:var(--ink-3)}
+.fin a:hover{color:var(--green)}
+
+.rv{opacity:0;transform:translateY(20px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
+.rv.in{opacity:1;transform:none}
+.hero .wrap>*,.mech>*,.chan>*,.limits>*,.people>*,.flow>*,.cogrid>*,.specs>*{min-width:0}
+
+@media(max-width:1080px){.co{width:27%}.explode .art{width:40%}}
+@media(max-width:900px){
+  body{font-size:16.5px}
+  .wrap{padding:0 22px}
+  nav{position:fixed;inset:80px 0 auto 0;background:#fff;flex-direction:column;gap:0;margin:0;padding:10px 22px 26px;
+    border-bottom:1px solid var(--line);transform:translateY(-140%);transition:transform .38s cubic-bezier(.2,.7,.3,1);font-size:18px}
+  nav.open{transform:none}
+  nav a{padding:16px 0;border-bottom:1px solid var(--line);font-weight:600}
+  nav a:last-child{border-bottom:0}
+  nav a::after{display:none}
+  .burger{display:block;order:3}
+  .lang{margin-left:auto;order:2}
+  .hero{padding:56px 0 74px}
+  .hero .wrap{grid-template-columns:1fr;gap:46px}
+  .sec{padding:62px 0}
+  .mgrid{grid-template-columns:1fr;gap:14px;margin-top:34px}
+  .subhead{margin-top:44px}
+  .lim{flex-direction:column;gap:14px}
+  .limits,.chan,.flow,.specs,.people{grid-template-columns:1fr}
+  .spec{border-right:0;border-bottom:1px solid rgba(74,145,56,.16);padding:32px 26px}
+  .spec:last-child{border-bottom:0}
+  .pipe{padding:34px 24px;border-radius:16px}
+  .flow{gap:34px;margin-top:34px}
+  .fstep{padding:0}
+  .fstep:not(:last-child)::after{display:none}
+  .explode{margin-top:42px}
+  .explode .art{width:74%}
+  .co{position:static;width:100%;max-width:none;text-align:left!important;margin-top:32px}
+  .co.l .ci{flex-direction:row}
+  .co::after{display:none}
+  .cogrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 26px}
+  .specs{margin-top:52px}
+  .dash{margin-top:66px}
+  .dbscroll{width:auto;zoom:1}
+  .dbw{min-width:820px}
+  .swipe{display:inline}
+}
+@media(max-width:560px){.cogrid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header id="hd">
+  <div class="wrap hin">
+    <a class="logo" href="#top" aria-label="ECO-VibraGuard">
+      <svg viewBox="0 0 1770 730" role="img">
+        <path fill="#262E30" d="M160 78H545v100H275v137h245v93H275v147h270v100H160Z"/>
+        <rect fill="#5AAB46" x="50" y="315" width="225" height="93"/>
+        <path fill="#262E30" d="M578 78h134l135 402 136-402h132L921 650H772Z"/>
+        <path fill="#5AAB46" d="M578 78h134l117 347-115 53Z"/>
+        <path fill="#262E30" fill-rule="evenodd" d="M1420 352h268a268 294 0 1 1 -38 -112 l-118 46 a153 176 0 1 0 13 168 h-125Z"/>
+      </svg>
+    </a>
+    <nav id="nav">
+      <a href="#problem" class="t" data-ko="문제" data-en="Problem">문제</a>
+      <a href="#tech" class="t" data-ko="기술" data-en="Technology">기술</a>
+      <a href="#product" class="t" data-ko="제품" data-en="Product">제품</a>
+      <a href="#progress" class="t" data-ko="진행" data-en="Progress">진행</a>
+      <a href="#contact" class="t" data-ko="연락처" data-en="Contact">연락처</a>
+    </nav>
+    <div class="lang"><button id="bko" class="on" onclick="setLang('ko')">KO</button><i></i><button id="ben" onclick="setLang('en')">EN</button></div>
+    <button class="burger" id="bg" aria-label="menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <div class="orb" style="width:540px;height:540px;background:#5AAB46;opacity:.16;top:-200px;right:-130px"></div>
+  <div class="orb" style="width:380px;height:380px;background:#7BC468;opacity:.10;bottom:-170px;left:-130px"></div>
+  <div class="wrap">
+    <div>
+      <div class="mark">ECO-VIBRAGUARD</div>
+      <h1 class="t" data-ko="붙이기만|하면 <em>됩니다.</em>" data-en="Just|<em>stick it on.</em>"></h1>
+      <p class="lead" style="margin-top:28px"><span class="t" data-ko="가동 중인 변압기 외벽에 붙여, 고장의 전조를 미리 읽습니다. 정전도, 배선 공사도 없습니다." data-en="Mounted on a live transformer's outer wall, it reads the warning signs early. No outage, no wiring."></span></p>
+      <div class="acts">
+        <a class="btn btn-p" href="#product"><span class="t" data-ko="제품 보기" data-en="See the product">제품 보기</span><span class="ar">→</span></a>
+        <a class="btn btn-s" href="#contact"><span class="t" data-ko="문의하기" data-en="Get in touch">문의하기</span></a>
+      </div>
+    </div>
+    <div>
+      <div class="scope">
+        <div class="scope-top"><span class="dotlive"></span> LIVE · TR-042</div>
+        <div>
+          <div class="chrow"><span class="cl t" data-ko="진동" data-en="VIB">진동</span>
+            <svg viewBox="0 0 300 34" preserveAspectRatio="none"><path id="s1" fill="none" stroke="#5AAB46" stroke-width="1.6" d=""/></svg><span class="st">OK</span></div>
+          <div class="chrow"><span class="cl t" data-ko="음향" data-en="SND">음향</span>
+            <svg viewBox="0 0 300 34" preserveAspectRatio="none"><g id="s2" fill="#5AAB46"></g></svg><span class="st">OK</span></div>
+          <div class="chrow"><span class="cl t" data-ko="초음파" data-en="AE">초음파</span>
+            <svg viewBox="0 0 300 34" preserveAspectRatio="none"><path id="s3" fill="none" stroke="#5AAB46" stroke-width="1.4" d=""/></svg><span class="st">OK</span></div>
+          <div class="chrow"><span class="cl t" data-ko="온도" data-en="TMP">온도</span>
+            <svg viewBox="0 0 300 34" preserveAspectRatio="none"><path id="s4" fill="none" stroke="#5AAB46" stroke-width="1.6" d=""/></svg><span class="st">OK</span></div>
+        </div>
+        <div class="scope-foot"><span class="t" data-ko="정상 상태 학습 완료" data-en="BASELINE LEARNED">정상 상태 학습 완료</span><span><b>●</b> <span class="t" data-ko="이상 없음" data-en="NO ANOMALY">이상 없음</span></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PROBLEM ===================== -->
+<section class="sec paper" id="problem">
+  <div class="orb" style="width:440px;height:440px;background:#5AAB46;opacity:.10;bottom:-190px;right:-120px"></div>
+  <div class="wrap">
+    <div class="rv" style="max-width:34em">
+      <div class="mark">01 &nbsp;PROBLEM</div>
+      <h2 class="t" data-ko="고장은 조용히 자라다가,|어느 날 갑자기 터집니다." data-en="A failure grows quietly,|then arrives all at once."></h2>
+      <p class="lead" style="margin-top:28px;color:var(--ink);font-weight:600"><span class="t" data-ko="다만 변압기는, 망가지기 전에 반드시 신호를 남깁니다." data-en="But a transformer always leaves a signal before it breaks."></span></p>
+    </div>
+
+    <div class="mgrid">
+      <div class="mcard rv">
+        <div class="mbody">
+          <div class="mhead">
+            <span class="cico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="10" height="16" rx="2"/><path d="M4 9v6M20 9v6M2 11v2M22 11v2"/></svg></span>
+            <span class="mnum">01</span>
+            <span class="mrule"></span>
+          </div>
+          <h3 class="t" data-ko="권선이 풀리고 코어가 밀립니다" data-en="Windings loosen, the core shifts">권선이 풀리고 코어가 밀립니다</h3>
+          <p class="t" data-ko="체결력이 떨어지면, 늘 나던 120Hz 떨림의 고조파 균형이 틀어집니다." data-en="As clamping force drops, the harmonic balance of the constant 120 Hz hum distorts."></p>
+        </div>
+        <div class="msig">
+          <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l3-7 4 14 3-9 2 4h5"/></svg></span>
+          <b class="t" data-ko="진동" data-en="Vibration">진동</b>
+          <span class="lb t" data-ko="감지 신호" data-en="SIGNAL">감지 신호</span>
+        </div>
+      </div>
+      <div class="mcard rv">
+        <div class="mbody">
+          <div class="mhead">
+            <span class="cico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L5 13h6l-1 9 8-11h-6z"/></svg></span>
+            <span class="mnum">02</span>
+            <span class="mrule"></span>
+          </div>
+          <h3 class="t" data-ko="절연이 무너지기 시작합니다" data-en="Insulation begins to break down">절연이 무너지기 시작합니다</h3>
+          <p class="t" data-ko="부분방전은 사람이 듣지 못하는 20~300kHz 초음파부터 시작합니다." data-en="Partial discharge starts as 20–300 kHz ultrasound, far above human hearing."></p>
+        </div>
+        <div class="msig">
+          <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M6 9v6M10 6v12M14 4v16M18 8v8M2 11v2M22 11v2"/></svg></span>
+          <b class="t" data-ko="초음파 · 음향" data-en="Ultrasound · sound">초음파 · 음향</b>
+          <span class="lb t" data-ko="감지 신호" data-en="SIGNAL">감지 신호</span>
+        </div>
+      </div>
+      <div class="mcard rv">
+        <div class="mbody">
+          <div class="mhead">
+            <span class="cico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c2.5 3.5 4 5.8 4 8a4 4 0 11-8 0c0-2.2 1.5-4.5 4-8z"/><path d="M6 20h12"/></svg></span>
+            <span class="mnum">03</span>
+            <span class="mrule"></span>
+          </div>
+          <h3 class="t" data-ko="한 곳에 열이 갇힙니다" data-en="Heat gets trapped in one spot">한 곳에 열이 갇힙니다</h3>
+          <p class="t" data-ko="내부 hot-spot의 열은 약 20분이면 외벽까지 전달됩니다." data-en="Heat from an internal hot spot reaches the outer wall in about twenty minutes."></p>
+        </div>
+        <div class="msig">
+          <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V5a2 2 0 114 0v8a5 5 0 11-4 0z"/></svg></span>
+          <b class="t" data-ko="온도" data-en="Temperature">온도</b>
+          <span class="lb t" data-ko="감지 신호" data-en="SIGNAL">감지 신호</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="subhead rv">
+      <span class="shl t" data-ko="기존 방법의 한계" data-en="WHERE TODAY'S METHODS FALL SHORT">기존 방법의 한계</span>
+      <span class="shd t" data-ko="그런데 지금 쓰는 방법으로는 이 신호를 잡지 못합니다." data-en="Yet none of today's methods can actually catch these signals."></span>
+    </div>
+
+    <div class="limits">
+      <div class="lim rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+        <div>
+          <h3 class="t" data-ko="육안 점검은 겉만 봅니다" data-en="Visual inspection only sees the outside">육안 점검은 겉만 봅니다</h3>
+          <p class="t" data-ko="이 신호들은 눈에 보이지 않고, 점검은 몇 달에 한 번입니다." data-en="None of these signals are visible — and inspections come months apart."></p>
+        </div>
+      </div>
+      <div class="lim rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2.5 2.5 0 002.2 3.6h9.6A2.5 2.5 0 0019 18l-5-9V3"/><path d="M7.5 15h9"/></svg>
+        <div>
+          <h3 class="t" data-ko="정밀 진단은 비싸고 정전이 필요합니다" data-en="Precision diagnostics cost money and an outage">정밀 진단은 비싸고 정전이 필요합니다</h3>
+          <p class="t" data-ko="모든 설비에 붙일 수 있는 방법이 아닙니다." data-en="It simply cannot go on every asset."></p>
+        </div>
+      </div>
+    </div>
+
+
+    </div>
+  </div>
+</section>
+
+<!-- ===================== TECH ===================== -->
+<section class="sec" id="tech">
+  <div class="orb" style="width:480px;height:480px;background:#5AAB46;opacity:.08;top:-190px;right:-150px"></div>
+  <div class="wrap">
+    <div class="rv" style="max-width:34em">
+      <div class="mark">02 &nbsp;TECHNOLOGY</div>
+      <h2 class="t" data-ko="그래서 그 네 개의 신호를|한꺼번에 읽습니다" data-en="So we read those four signals|all at once"></h2>
+      <p class="lead" style="margin-top:28px"><span class="t" data-ko="센서 하나로는 감지 범위가 좁고, 부하 변동이나 환경 소음에 쉽게 속습니다. 네 채널을 서로 대조하면 안을 열지 않고도 세 가지 고장 경로를 모두 볼 수 있습니다." data-en="One sensor sees too little and is easily fooled by load swings and ambient noise. Cross-check four channels and all three failure paths become visible — without opening anything."></span></p>
+    </div>
+
+    <div class="chan">
+      <div class="card rv">
+        <div class="ch"><h3 class="t" data-ko="진동" data-en="Vibration">진동</h3><span class="bd">VIBRATION</span></div>
+        <p class="t" data-ko="권선 풀림, 코어 변위, 철심 노화를 봅니다." data-en="Watches for loosened windings, core displacement and core ageing."></p>
+        <div class="viz"><svg viewBox="0 0 300 62" preserveAspectRatio="none"><path id="v1" fill="none" stroke="#5AAB46" stroke-width="1.8" d=""/></svg></div>
+      </div>
+      <div class="card rv">
+        <div class="ch"><h3 class="t" data-ko="음향" data-en="Sound">음향</h3><span class="bd">ACOUSTIC</span></div>
+        <p class="t" data-ko="아크·코로나 방전음과 이상 소음을 봅니다." data-en="Listens for arcing, corona discharge and abnormal noise."></p>
+        <div class="viz"><svg viewBox="0 0 300 62" preserveAspectRatio="none"><g id="v2" fill="#5AAB46"></g></svg></div>
+      </div>
+      <div class="card rv">
+        <div class="ch"><h3 class="t" data-ko="초음파" data-en="Ultrasound">초음파</h3><span class="bd">ULTRASONIC AE</span></div>
+        <p class="t" data-ko="절연 파괴의 가장 이른 전조, 부분방전을 봅니다." data-en="Catches partial discharge, the earliest sign of insulation failure."></p>
+        <div class="viz"><svg viewBox="0 0 300 62" preserveAspectRatio="none"><path id="v3" fill="none" stroke="#5AAB46" stroke-width="1.4" d=""/></svg></div>
+      </div>
+      <div class="card rv">
+        <div class="ch"><h3 class="t" data-ko="온도" data-en="Temperature">온도</h3><span class="bd">THERMAL</span></div>
+        <p class="t" data-ko="과열, 냉각 실패, 과부하 지속을 봅니다." data-en="Tracks overheating, cooling failure and sustained overload."></p>
+        <div class="viz"><svg viewBox="0 0 300 62" preserveAspectRatio="none">
+          <defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#CFE6C7"/><stop offset=".55" stop-color="#5AAB46"/><stop offset="1" stop-color="#D9563F"/></linearGradient></defs>
+          <rect x="0" y="22" width="300" height="14" rx="7" fill="url(#tg)"/>
+          <g id="v4"><rect x="150" y="14" width="3" height="30" rx="1.5" fill="#262E30"/></g>
+        </svg></div>
+      </div>
+    </div>
+
+    <div class="pipe rv">
+      <div class="ptitle">HOW IT WORKS</div>
+      <h3 class="t" data-ko="측정하고, 배우고, 판정합니다." data-en="Measure. Learn. Decide."></h3>
+      <div class="flow">
+        <div class="fstep">
+          <div class="fnum">STEP 01</div>
+          <svg class="fic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="12" width="20" height="24" rx="3"/><path d="M32 18a10 10 0 010 12M38 13a17 17 0 010 22"/><path d="M12 24h3l2-5 3 10 2-5h2"/></svg>
+          <h4 class="t" data-ko="측정" data-en="Measure">측정</h4>
+          <p class="t" data-ko="외벽에서 네 종류의 신호를 시간 동기로 수집합니다." data-en="Four signal types captured from the outer wall, time-synchronised."></p>
+        </div>
+        <div class="fstep">
+          <div class="fnum">STEP 02</div>
+          <svg class="fic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 36V20M17 36V12M26 36V24M35 36V16"/><path d="M6 40h36"/><circle cx="17" cy="12" r="3"/><circle cx="35" cy="16" r="3"/></svg>
+          <h4 class="t" data-ko="학습" data-en="Learn">학습</h4>
+          <p class="t" data-ko="그 변압기의 '평소'를 스스로 익힙니다. 부하 변동과 밤낮 온도차는 정상으로 봅니다." data-en="It learns that unit's own normal — load swings and day-night drift included."></p>
+        </div>
+        <div class="fstep">
+          <div class="fnum">STEP 03</div>
+          <svg class="fic" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M24 6l16 8v10c0 10-6.6 17-16 20C14.6 41 8 34 8 24V14z"/><path d="M18 24l4 4 9-9"/></svg>
+          <h4 class="t" data-ko="판정" data-en="Decide">판정</h4>
+          <p class="t" data-ko="클라우드가 아니라 단말 위에서 직접 판단합니다." data-en="The decision happens on the device itself, not in the cloud."></p>
+        </div>
+      </div>
+      <div class="verdict">
+        <span class="chip"><span class="dot"></span><span class="t" data-ko="진동" data-en="Vibration">진동</span></span><span class="plus">+</span>
+        <span class="chip"><span class="dot"></span><span class="t" data-ko="음향" data-en="Sound">음향</span></span><span class="plus">+</span>
+        <span class="chip"><span class="dot"></span><span class="t" data-ko="초음파" data-en="Ultrasound">초음파</span></span><span class="plus">+</span>
+        <span class="chip"><span class="dot"></span><span class="t" data-ko="온도" data-en="Temperature">온도</span></span>
+        <span class="plus">→</span>
+        <span class="res"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <span class="t" data-ko="위험 판정" data-en="Risk flagged">위험 판정</span></span>
+        <span class="cap t" data-ko="하나의 센서는 자주 틀립니다. 물리적으로 이어진 신호들이 동시에 어긋날 때에만 알립니다." data-en="A single sensor is often wrong. It only alerts when physically linked signals deviate together."></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRODUCT ===================== -->
+<section class="sec paper" id="product">
+  <div class="orb" style="width:440px;height:440px;background:#5AAB46;opacity:.09;top:80px;left:-170px"></div>
+  <div class="wrap">
+    <div class="rv" style="max-width:36em">
+      <div class="mark">03 &nbsp;PRODUCT</div>
+      <h2 class="t" data-ko="설치는 붙이는 것으로|끝납니다" data-en="Installation ends|the moment it's attached"></h2>
+      <p class="lead" style="margin-top:28px"><span class="t" data-ko="변압기 외벽에 붙는 센서 박스와, 조금 떨어진 곳에 두는 제어함 두 덩어리로 이루어져 있습니다." data-en="Two parts: a sensor box on the transformer wall, and a control unit set a short distance away."></span></p>
+    </div>
+
+    <div class="explode rv">
+      <div class="art">
+        <svg viewBox="0 0 580 470" fill="none" stroke="#262E30" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+          <defs>
+            <clipPath id="zoomClip"><circle cx="468" cy="352" r="80"/></clipPath>
+          </defs>
+          <path d="M8 436h564" stroke="#DDE4DF" stroke-width="2.5"/>
+
+          <!-- mast + solar + control box -->
+          <rect x="26" y="150" width="10" height="286" rx="3" fill="#F4F7F4" stroke="#C9D5CD" stroke-width="1.5"/>
+          <path d="M0 96 L72 84 L86 106 L14 118 Z" fill="#F4F7F4" stroke="#C9D5CD" stroke-width="1.6"/>
+          <path d="M24 92 L38 114M50 88 L64 110" stroke="#DDE4DF" stroke-width="1.3"/>
+          <path d="M48 112 L44 150" stroke="#C9D5CD" stroke-width="1.6"/>
+          <rect x="4" y="152" width="58" height="48" rx="7" fill="#fff" stroke="#C9D5CD" stroke-width="1.6"/>
+          <path d="M14 168h32M14 178h18" stroke="#DDE4DF" stroke-width="2"/>
+          <circle cx="52" cy="190" r="3.4" fill="#5AAB46" stroke="none"/>
+
+          <!-- transformer -->
+          <rect x="86" y="170" width="24" height="170" rx="6" fill="#F4F7F4" stroke="#C9D5CD" stroke-width="1.8"/>
+          <g stroke="#DDE4DF" stroke-width="1.4"><path d="M86 202h24M86 234h24M86 266h24M86 298h24"/></g>
+          <rect x="110" y="112" width="220" height="272" rx="20" fill="#fff"/>
+          <rect x="102" y="84" width="236" height="28" rx="11" fill="#262E30" stroke="none"/>
+          <g stroke-width="2.3">
+            <path d="M146 84V62M220 84V54M294 84V62"/>
+            <ellipse cx="146" cy="58" rx="15" ry="7" fill="#fff"/>
+            <ellipse cx="220" cy="50" rx="15" ry="7" fill="#fff"/>
+            <ellipse cx="294" cy="58" rx="15" ry="7" fill="#fff"/>
+          </g>
+          <path d="M132 148h176M132 168h108" stroke="#EDF1EE" stroke-width="2"/>
+          <rect x="128" y="384" width="184" height="20" rx="6" fill="#F4F7F4" stroke="#C9D5CD" stroke-width="1.8"/>
+          <path d="M160 404v32M280 404v32" stroke="#C9D5CD" stroke-width="3"/>
+
+          <!-- sensor box attached to the wall -->
+          <g>
+            <rect x="320" y="164" width="20" height="16" rx="4" fill="#3C4A46" stroke="none"/>
+            <rect x="320" y="264" width="20" height="16" rx="4" fill="#3C4A46" stroke="none"/>
+            <rect x="330" y="140" width="98" height="148" rx="15" fill="#5AAB46" stroke="#4A9138" stroke-width="2.2"/>
+            <path d="M348 214h11l7-22 9 42 8-32 6 12h15" stroke="#fff" stroke-width="3"/>
+            <circle cx="342" cy="152" r="3.6" fill="#fff" stroke="none"/><circle cx="416" cy="152" r="3.6" fill="#fff" stroke="none"/>
+            <circle cx="342" cy="276" r="3.6" fill="#fff" stroke="none"/><circle cx="416" cy="276" r="3.6" fill="#fff" stroke="none"/>
+          </g>
+          <g stroke="#5AAB46" fill="none">
+            <path d="M440 126a22 22 0 0116 16" stroke-width="2.2"/>
+            <path d="M446 106a40 40 0 0130 30" stroke-width="1.9" opacity=".6"/>
+            <path d="M452 86a58 58 0 0144 44" stroke-width="1.6" opacity=".35"/>
+          </g>
+
+          <path d="M410 290 L428 306" stroke="#C9D5CD" stroke-width="1.6" stroke-dasharray="4 5"/>
+
+          <!-- magnified: magnet gripping the steel wall -->
+          <g clip-path="url(#zoomClip)">
+            <rect x="384" y="268" width="176" height="172" fill="#FCFDFC"/>
+            <rect x="384" y="268" width="52" height="172" fill="#F1F5F2" stroke="#C9D5CD" stroke-width="2"/>
+            <path d="M400 280v148M416 280v148" stroke="#E3EAE5" stroke-width="2"/>
+            <rect x="436" y="304" width="24" height="30" rx="5" fill="#3C4A46" stroke="none"/>
+            <rect x="436" y="368" width="24" height="30" rx="5" fill="#3C4A46" stroke="none"/>
+            <rect x="460" y="286" width="88" height="130" rx="15" fill="#5AAB46" stroke="#4A9138" stroke-width="2.2"/>
+            <path d="M476 356h9l6-18 8 34 7-27 5 11h11" stroke="#fff" stroke-width="2.8"/>
+          </g>
+          <circle cx="468" cy="352" r="80" fill="none" stroke="#fff" stroke-width="7"/>
+          <circle cx="468" cy="352" r="80" fill="none" stroke="#C9D5CD" stroke-width="2"/>
+        </svg>
+      </div>
+
+      <div class="cogrid">
+        <div class="co l p1 rv">
+          <div class="ci"><span class="n">01</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 3v8a6 6 0 0012 0V3"/><path d="M6 3h4M14 3h4M6 8h4M14 8h4"/></svg></div>
+          <h3 class="t" data-ko="무정전 부착" data-en="Live-line mount">무정전 부착</h3>
+          <p class="t" data-ko="고강도 자석과 산업용 밴드로 작동 중인 외벽에 붙입니다. 정전도 배선 공사도 없습니다." data-en="High-force magnets and industrial banding onto an energised wall. No outage, no wiring."></p>
+        </div>
+        <div class="co l p2 rv">
+          <div class="ci"><span class="n">02</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2.5-7 4 14 3-11 2 4h5.5"/></svg></div>
+          <h3 class="t" data-ko="4채널 계측" data-en="Four-channel sensing">4채널 계측</h3>
+          <p class="t" data-ko="진동·음향·초음파·온도를 시간 동기로 함께 읽습니다." data-en="Vibration, sound, ultrasound and temperature, read in sync."></p>
+        </div>
+        <div class="co r p3 rv">
+          <div class="ci"><span class="n">03</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="10" y="10" width="4" height="4"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg></div>
+          <h3 class="t" data-ko="엣지 판정" data-en="On-device decisions">엣지 판정</h3>
+          <p class="t" data-ko="단말에서 직접 분석합니다. 통신이 끊겨도 감시는 멈추지 않습니다." data-en="Analysis runs on the device. Monitoring survives a network drop."></p>
+        </div>
+        <div class="co r p4 rv">
+          <div class="ci"><span class="n">04</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></div>
+          <h3 class="t" data-ko="자립 전원" data-en="Self-sufficient power">자립 전원</h3>
+          <p class="t" data-ko="태양광 패널과 배터리로 24시간 스스로 돕니다." data-en="A solar panel and battery keep it running around the clock."></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="specs rv">
+      <div class="spec">
+        <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+        <b class="t" data-ko="1분" data-en="1 min">1분</b>
+        <span class="t" data-ko="정전 없이 외벽에 붙이면 설치 끝" data-en="Attach to the wall — install done, no outage">정전 없이 외벽에 붙이면 설치 끝</span>
+      </div>
+      <div class="spec">
+        <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        <b>IP65</b>
+        <span class="t" data-ko="옥외 방수·방진. 혹서·다습 환경 기준 설계" data-en="Sealed for outdoor duty — heat, humidity, dust">옥외 방수·방진. 혹서·다습 환경 기준 설계</span>
+      </div>
+      <div class="spec">
+        <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M3.9 3.9l2.1 2.1M18 18l2.1 2.1M1.5 12h3M19.5 12h3M3.9 20.1L6 18M18 6l2.1-2.1"/></svg>
+        <b class="t" data-ko="24시간" data-en="24/7">24시간</b>
+        <span class="t" data-ko="태양광으로 상시 가동. 외부 전원 불필요" data-en="Always on, solar powered, no external supply">태양광으로 상시 가동. 외부 전원 불필요</span>
+      </div>
+    </div>
+
+    <div class="dash rv">
+      <div class="dtx">
+        <div class="mark" style="margin-bottom:20px">DASHBOARD</div>
+        <h3 class="t" data-ko="흩어진 변압기를|한 화면에서 봅니다" data-en="Every transformer,|on one screen"></h3>
+        <p class="t" data-ko="단말이 보낸 판정 결과가 관제 화면에 모입니다. 어느 변압기가 위험한지, 왜 그렇게 판정됐는지, 무엇을 먼저 손봐야 하는지를 위험도 순으로 보여줍니다." data-en="Every decision the nodes send lands on one console — which unit is at risk, why it was flagged, and what to attend to first, ranked by risk."></p>
+      </div>
+
+      <div class="dbscroll">
+      <div class="dbw">
+        <div class="dbgrid">
+          <!-- sidebar -->
+          <aside class="dbside">
+            <div class="dblogo">
+              <span class="lm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg></span>
+              <span><b>EcoVibraGuard</b><span>GRID<br>INTELLIGENCE</span></span>
+            </div>
+            <div class="dbnl">CONTROL</div>
+            <div class="dbnav">
+              <a class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
+              <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>Map</a>
+              <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 2L5 13h6l-1 9 8-11h-6z"/></svg>Transformers</a>
+              <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>Alerts<span class="cnt">12</span></a>
+              <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4 4l2 2M18 18l2 2M2 12h3M19 12h3M4 20l2-2M18 6l2-2"/></svg>Devices</a>
+              <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Reports</a>
+              <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8.5"/></svg>Settings</a>
+            </div>
+            <div class="dbuser"><span class="ua">AS</span><span><b>A. Sharma</b><span>JAIPUR ZONE</span></span></div>
+          </aside>
+
+          <!-- main -->
+          <div>
+            <div class="dbtop">
+              <span class="zsel"><span class="dot"></span>Jaipur Zone
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></span>
+              <span class="dsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search transformer / fe</span>
+              <span class="dclock">23:46:47 <i>IST</i></span>
+              <span class="dnet"><span class="dot"></span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8.5a15 15 0 0120 0M5.5 12a10 10 0 0113 0M9 15.5a5 5 0 016 0M12 19h.01"/></svg>
+                Edge network · Online</span>
+            </div>
+
+            <div class="dbbody">
+              <div class="dbtitle">
+                <div>
+                  <h4>Grid Health Overview</h4>
+                  <div class="sub">Jaipur Zone &nbsp;·&nbsp; <b>1,248 nodes</b> &nbsp;·&nbsp; last sync <b>12s ago</b></div>
+                </div>
+                <span class="dbref">⟳ REFRESH</span>
+              </div>
+
+              <div class="dbkpi">
+                <div class="kpi">
+                  <div class="kh"><span class="kl">TOTAL FLEET<br>MONITORED NODES</span>
+                    <svg class="spark" viewBox="0 0 64 20"><path d="M0 12L8 10 16 13 24 9 32 12 40 10 48 13 56 11 64 12" fill="none" stroke="#4CD98A" stroke-width="1.2"/></svg></div>
+                  <b>1,248</b><div class="kf"><span class="g">+18</span> added this week</div>
+                </div>
+                <div class="kpi g">
+                  <div class="kh"><span class="kl">NOMINAL<br>GRID HEALTH</span>
+                    <svg class="spark" viewBox="0 0 64 20"><path d="M0 11L8 12 16 9 24 11 32 10 40 12 48 9 56 11 64 10" fill="none" stroke="#4CD98A" stroke-width="1.2"/></svg></div>
+                  <b>94%</b><div class="kf">1,173 nodes <span class="w">nominal</span> right now</div>
+                </div>
+                <div class="kpi r">
+                  <div class="kh"><span class="kl">REQUIRES ATTENTION<br>ACTIVE ALERTS</span>
+                    <svg class="spark" viewBox="0 0 64 20"><path d="M0 13L8 11 16 14 24 6 32 9 40 5 48 12 56 10 64 13" fill="none" stroke="#F1584E" stroke-width="1.2"/></svg></div>
+                  <b>12</b><div class="kf"><span class="r">3 critical</span> · <span class="y">9 warning</span></div>
+                </div>
+                <div class="kpi g">
+                  <div class="kh"><span class="kl">REMAINING USEFUL LIFE<br>AVG. FLEET RUL</span>
+                    <svg class="spark" viewBox="0 0 64 20"><path d="M0 11L8 10 16 12 24 10 32 11 40 9 48 12 56 10 64 11" fill="none" stroke="#4CD98A" stroke-width="1.2"/></svg></div>
+                  <b>38 mo</b><div class="kf">Fleet median life remaining <span class="w">stable</span></div>
+                </div>
+              </div>
+
+              <div class="dbcols">
+                <div class="pan">
+                  <div class="panh">
+                    <div><div class="pl">LIVE GRID</div><h5>Regional Health Map</h5></div>
+                    <div class="pr">1,248 nodes · <b>3 critical</b></div>
+                  </div>
+                  <div class="mapbox">
+                    <span class="maplab">JAIPUR · RAJASTHAN</span>
+                    <svg viewBox="0 0 620 520">
+                      <g stroke="#152019" stroke-width="1">
+                        <path d="M0 65h620M0 130h620M0 195h620M0 260h620M0 325h620M0 390h620M0 455h620M100 0v520M200 0v520M300 0v520M400 0v520M500 0v520"/>
+                      </g>
+                      <path d="M96 232 C104 132 190 64 300 68 C420 72 514 118 552 222 C586 302 548 398 452 442 C356 486 212 470 150 402 C104 352 90 300 96 232 Z"
+                            fill="#0C1310" stroke="#1E2B26" stroke-width="1.6" stroke-dasharray="7 8"/>
+                      <g stroke="#17241E" stroke-width="1" fill="none">
+                        <path d="M240 100 L318 168 L200 208 L240 100M318 168 L392 150 L360 286 L268 320 L200 208M360 286 L452 400 L392 150M268 320 L188 286 L200 208M452 400 L496 372 L392 150M316 358 L268 320M512 384 L452 400"/>
+                      </g>
+                      <g>
+                        <circle cx="240" cy="100" r="7" fill="#4CD98A"/><circle cx="430" cy="94" r="7" fill="#4CD98A"/>
+                        <circle cx="392" cy="230" r="7" fill="#4CD98A"/><circle cx="268" cy="320" r="7" fill="#4CD98A"/>
+                        <circle cx="316" cy="380" r="7" fill="#4CD98A"/><circle cx="512" cy="384" r="7" fill="#4CD98A"/>
+                        <circle cx="248" cy="164" r="7" fill="#E9A23B"/><circle cx="298" cy="184" r="7" fill="#E9A23B"/>
+                        <circle cx="360" cy="152" r="7" fill="#E9A23B"/><circle cx="392" cy="386" r="7" fill="#E9A23B"/>
+                        <circle cx="470" cy="392" r="7" fill="#E9A23B"/>
+                        <g fill="#F1584E">
+                          <circle cx="150" cy="228" r="7"/><circle cx="206" cy="300" r="7"/><circle cx="412" cy="430" r="7"/>
+                        </g>
+                        <g fill="none" stroke="#F1584E" stroke-width="1.5" opacity=".8">
+                          <circle cx="150" cy="228" r="15"/><circle cx="206" cy="300" r="15"/><circle cx="412" cy="430" r="15"/>
+                        </g>
+                        <circle cx="490" cy="424" r="6" fill="#4E5D58"/>
+                        <rect x="454" y="440" width="74" height="19" rx="6" fill="#121A16" stroke="#22332B"/>
+                        <text x="491" y="453" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="#7C8C86" letter-spacing="1.2">SYNCING</text>
+                      </g>
+                      <g transform="translate(572,462)">
+                        <circle r="12" fill="#121A16" stroke="#22332B"/>
+                        <path d="M0 -6 L0 6 M-4.5 -1 L0 -6 L4.5 -1" stroke="#4E5D58" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                      </g>
+                    </svg>
+                  </div>
+                  <div class="maplegend">
+                    <span><i style="background:#4CD98A"></i>Healthy <b style="color:#EAF2EE;font-weight:400">6</b></span>
+                    <span><i style="background:#E9A23B"></i>Warning <b style="color:#EAF2EE;font-weight:400">5</b></span>
+                    <span><i style="background:#F1584E"></i>Critical <b style="color:#EAF2EE;font-weight:400">3</b></span>
+                    <span><i style="background:#4E5D58"></i>Offline / Syncing <b style="color:#EAF2EE;font-weight:400">1</b></span>
+                  </div>
+                </div>
+
+                <div class="pan">
+                  <div class="panh">
+                    <div><div class="pl">RISK-RANKED</div><h5>Priority Alert Queue</h5></div>
+                    <span class="badge">12 alerts</span>
+                  </div>
+                  <div class="alert">
+                    <span class="rk">1</span>
+                    <span class="fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 22c4-1.5 6-4.5 6-8 0-4-3-6-3-9-2 1.5-3 3-3 5-1-1-2-2.5-2-4-2 2-4 5-4 8 0 3.5 2 6.5 6 8z"/></svg></span>
+                    <span class="body"><span class="tx">TX-JPR-0589</span><span class="cr">CRITICAL</span>
+                      <div class="ttl">Arc discharge precursor</div>
+                      <div class="loc">Sanganer, Jaipur &nbsp;·&nbsp; 08:14:32</div></span>
+                    <span class="risk"><b>96</b><span>RISK</span></span>
+                  </div>
+                  <div class="alert">
+                    <span class="rk">2</span>
+                    <span class="fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 22c4-1.5 6-4.5 6-8 0-4-3-6-3-9-2 1.5-3 3-3 5-1-1-2-2.5-2-4-2 2-4 5-4 8 0 3.5 2 6.5 6 8z"/></svg></span>
+                    <span class="body"><span class="tx">TX-JPR-0421</span><span class="cr">CRITICAL</span>
+                      <div class="ttl">Winding looseness</div>
+                      <div class="loc">Mansarovar, Jaipur &nbsp;·&nbsp; 07:58:11</div></span>
+                    <span class="risk"><b>91</b><span>RISK</span></span>
+                  </div>
+                  <div class="alert">
+                    <span class="rk">3</span>
+                    <span class="fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 22c4-1.5 6-4.5 6-8 0-4-3-6-3-9-2 1.5-3 3-3 5-1-1-2-2.5-2-4-2 2-4 5-4 8 0 3.5 2 6.5 6 8z"/></svg></span>
+                    <span class="body"><span class="tx">TX-JPR-0317</span><span class="cr">CRITICAL</span>
+                      <div class="ttl">Cooling failure</div>
+                      <div class="loc">Vaishali Nagar, Jaipur &nbsp;·&nbsp; 07:31:49</div></span>
+                    <span class="risk"><b>88</b><span>RISK</span></span>
+                  </div>
+                  <div class="alert w">
+                    <span class="rk">4</span>
+                    <span class="fl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 22c4-1.5 6-4.5 6-8 0-4-3-6-3-9-2 1.5-3 3-3 5-1-1-2-2.5-2-4-2 2-4 5-4 8 0 3.5 2 6.5 6 8z"/></svg></span>
+                    <span class="body"><span class="tx">TX-JPR-0244</span><span class="cr">WARNING</span>
+                      <div class="ttl">Core vibration drift</div>
+                      <div class="loc">Malviya Nagar, Jaipur &nbsp;·&nbsp; 06:52:20</div></span>
+                    <span class="risk"><b>74</b><span>RISK</span></span>
+                  </div>
+                  <div class="panf"><span>AUTO-REFRESHES EVERY 30S</span><span>↑ sorted by risk score</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+      <p class="dbnote"><span class="t" data-ko="※ 관제 화면 예시입니다. 지역·단위 표기는 도입 환경에 맞춰 바뀝니다." data-en="※ Example console view. Regions and labels adapt to the deployment."></span> <span class="swipe t" data-ko="좌우로 밀어서 보세요." data-en="Swipe horizontally to see it all."></span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PROGRESS ===================== -->
+<section class="sec" id="progress">
+  <div class="wrap">
+    <div class="rv" style="max-width:34em">
+      <div class="mark">04 &nbsp;PROGRESS</div>
+      <h2 class="t" data-ko="현재까지의 진행 상태" data-en="Where we are now"></h2>
+    </div>
+    <div class="tl rv">
+      <div class="tl-line">
+        <div class="tl-i done"><div class="d"></div><div class="dt">2026.05</div>
+          <div class="tt t" data-ko="개발 시작" data-en="Development starts">개발 시작</div>
+          <div class="dd t" data-ko="KAIST Fast Prototyping 시제품 제작 트랙에 선정돼 개발에 착수했습니다." data-en="Selected for the KAIST Fast Prototyping build track and began development.">KAIST Fast Prototyping 시제품 제작 트랙에 선정돼 개발에 착수했습니다.</div></div>
+        <div class="tl-i done"><div class="d"></div><div class="dt">2026.06</div>
+          <div class="tt t" data-ko="1차 프로토타입" data-en="First prototype">1차 프로토타입</div>
+          <div class="dd t" data-ko="센서 보드를 만들어 신호 수집부터 주파수 분석·전송까지 도는 파이프라인을 완성했습니다." data-en="Built the sensor board and closed the loop from capture through frequency analysis to transmission.">센서 보드를 만들어 신호 수집부터 주파수 분석·전송까지 도는 파이프라인을 완성했습니다.</div></div>
+        <div class="tl-i done"><div class="d"></div><div class="dt">2026.07</div>
+          <div class="tt t" data-ko="하드웨어 설계 확정" data-en="Hardware design frozen">하드웨어 설계 확정</div>
+          <div class="dd t" data-ko="부분방전 감지용 초음파 체인과 태양광 전원부까지 포함한 설계를 확정했습니다. (GRAVITY 2026)" data-en="Froze the design including the ultrasonic PD chain and the solar power stage. (GRAVITY 2026)">부분방전 감지용 초음파 체인과 태양광 전원부까지 포함한 설계를 확정했습니다. (GRAVITY 2026)</div></div>
+        <div class="tl-i done"><div class="d"></div><div class="dt">2026.08</div>
+          <div class="tt t" data-ko="검증 연구 착수" data-en="Validation research begins">검증 연구 착수</div>
+          <div class="dd t" data-ko="PDSP Deep Tech 트랙에 선정돼 외벽 부착형 전조 탐지 검증 연구를 시작했습니다." data-en="Selected for the PDSP Deep Tech track to validate wall-mounted precursor detection.">PDSP Deep Tech 트랙에 선정돼 외벽 부착형 전조 탐지 검증 연구를 시작했습니다.</div></div>
+        <div class="tl-i now"><div class="d"></div><div class="dt">2026.09 —</div>
+          <div class="tt t" data-ko="실물 부착 실증" data-en="Mounting it for real">실물 부착 실증</div>
+          <div class="dd t" data-ko="완성한 시제품을 실제 운용 중인 변압기 외벽에 붙여, 신호가 제대로 도달하는지 실측합니다." data-en="Mounting the finished prototype on a transformer in live service to measure whether the signals really arrive.">완성한 시제품을 실제 운용 중인 변압기 외벽에 붙여, 신호가 제대로 도달하는지 실측합니다.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTACT ===================== -->
+<section class="sec paper" id="contact">
+  <div class="orb" style="width:450px;height:450px;background:#5AAB46;opacity:.10;top:-150px;left:-150px"></div>
+  <div class="wrap">
+    <div class="rv" style="max-width:30em">
+      <div class="mark">05 &nbsp;CONTACT</div>
+      <h2>Contact</h2>
+    </div>
+    <div class="people">
+      <div class="per rv">
+        <div class="av">TY</div>
+        <div class="rl t" data-ko="대표 · 사업 총괄" data-en="CEO · BUSINESS">대표 · 사업 총괄</div>
+        <div class="nm t" data-ko="김태영" data-en="Taeyoung Kim">김태영</div>
+        <a class="em" href="mailto:taeyoungkim697@gmail.com">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          taeyoungkim697@gmail.com</a>
+      </div>
+      <div class="per rv">
+        <div class="av">HL</div>
+        <div class="rl t" data-ko="CTO · 개발 · 연구" data-en="CTO · ENGINEERING">CTO · 개발 · 연구</div>
+        <div class="nm t" data-ko="이희진" data-en="Heejin Lee">이희진</div>
+        <a class="em" href="mailto:heejin.lee@kaist.ac.kr">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          heejin.lee@kaist.ac.kr</a>
+      </div>
+      <div class="per rv">
+        <div class="av">HJ</div>
+        <div class="rl t" data-ko="하드웨어 · 디자인" data-en="HARDWARE · DESIGN">하드웨어 · 디자인</div>
+        <div class="nm t" data-ko="오하주" data-en="Haju Oh">오하주</div>
+        <a class="em" href="mailto:haju0312@kaist.ac.kr">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          haju0312@kaist.ac.kr</a>
+      </div>
+    </div>
+    <div class="cmeta">
+      <b>ECO-VibraGuard</b><span class="t" data-ko="KAIST · 대전, 대한민국" data-en="KAIST · Daejeon, Republic of Korea">KAIST · 대전, 대한민국</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap fin">
+  <div>© 2026 ECO-VibraGuard</div>
+  <div><a href="#contact" class="t" data-ko="연락처" data-en="Contact">연락처</a></div>
+</div></footer>
+
+<script>
+var LANG='ko';
+function setLang(l){
+  LANG=l; document.documentElement.lang=l;
+  document.querySelectorAll('.t').forEach(function(el){
+    var v=el.getAttribute('data-'+l); if(v===null) return;
+    el.innerHTML=v.split('|').join('<br>');
+  });
+  document.getElementById('bko').classList.toggle('on',l==='ko');
+  document.getElementById('ben').classList.toggle('on',l==='en');
+}
+
+var nav=document.getElementById('nav');
+window.addEventListener('scroll',function(){
+  document.getElementById('hd').classList.toggle('solid',window.scrollY>4);
+},{passive:true});
+document.getElementById('bg').addEventListener('click',function(){
+  nav.classList.toggle('open'); this.classList.toggle('x');
+});
+nav.addEventListener('click',function(e){
+  if(e.target.tagName==='A'){ nav.classList.remove('open'); document.getElementById('bg').classList.remove('x'); }
+});
+
+var links=[].slice.call(nav.querySelectorAll('a'));
+var targets=links.map(function(a){return document.querySelector(a.getAttribute('href'))});
+var spy=new IntersectionObserver(function(es){
+  es.forEach(function(e){
+    if(e.isIntersecting){
+      var i=targets.indexOf(e.target);
+      links.forEach(function(a,j){a.classList.toggle('act',j===i)});
+    }
+  });
+},{rootMargin:'-45% 0px -50% 0px'});
+targets.forEach(function(t){ if(t) spy.observe(t) });
+
+var io=new IntersectionObserver(function(es){
+  es.forEach(function(e){ if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)} });
+},{threshold:.06,rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.rv').forEach(function(el){io.observe(el)});
+
+(function(){
+  function wave(el,W,H,t,o){
+    if(!el) return; var p='',n=o.n||64;
+    for(var i=0;i<=n;i++){
+      var x=i/n*W,u=i/n*Math.PI*2*o.f+t*o.s;
+      var y=H/2-(Math.sin(u)+(o.h||0)*Math.sin(u*3+t*1.3))*o.a;
+      p+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';
+    }
+    el.setAttribute('d',p);
+  }
+  function burst(el,W,H,t){
+    if(!el) return; var p='M0 '+(H/2)+' ',n=150;
+    for(var i=1;i<=n;i++){
+      var x=i/n*W, ph=(i/n*7+t*.5)%1;
+      var env=Math.exp(-Math.pow((ph-.25)*7,2))+0.35*Math.exp(-Math.pow((ph-.7)*9,2));
+      p+='L'+x.toFixed(1)+' '+(H/2-Math.sin(i*2.4+t*6)*(H*.42)*env).toFixed(1)+' ';
+    }
+    el.setAttribute('d',p);
+  }
+  function bars(g,W,H,t,cnt){
+    if(!g) return; var s='',w=W/cnt*.55,gap=W/cnt;
+    for(var i=0;i<cnt;i++){
+      var v=(Math.sin(i*1.7+t*2.6)*.5+.5)*(.35+.65*Math.abs(Math.sin(i*.6+t)));
+      var h=Math.max(3,v*H*.9);
+      s+='<rect x="'+(i*gap+(gap-w)/2).toFixed(1)+'" y="'+((H-h)/2).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="1.5"/>';
+    }
+    g.innerHTML=s;
+  }
+  var t=0,raf,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var id=function(x){return document.getElementById(x)};
+  function frame(){
+    t+=.02;
+    wave(id('s1'),300,34,t,{a:9,f:3.2,s:1.1,h:.35});
+    bars(id('s2'),300,34,t,26);
+    burst(id('s3'),300,34,t);
+    wave(id('s4'),300,34,t,{a:6,f:.8,s:.35,n:40});
+    wave(id('v1'),300,62,t,{a:17,f:2.6,s:1,h:.4});
+    bars(id('v2'),300,62,t,30);
+    burst(id('v3'),300,62,t);
+    var k=id('v4'); if(k) k.firstElementChild.setAttribute('x',(150+Math.sin(t*.7)*66).toFixed(1));
+    raf=requestAnimationFrame(frame);
+  }
+  frame();
+  if(reduce) cancelAnimationFrame(raf);
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden) cancelAnimationFrame(raf); else if(!reduce) frame();
+  });
+})();
+
+setLang('ko');
+</script>
+</body>
+</html>
